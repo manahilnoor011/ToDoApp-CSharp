@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 
 /* Menu           -DONE CRUD - Create, Read, Update, Delete
  * Add Task       -DONE 
@@ -8,8 +10,8 @@ using System.Collections.Generic;
  * Remove Task    -DONE 
  * Search Task    -DONE
  * Exit           -DONE
- * Multiple Users -Somewhat DONE
- * Multiple Tasks
+ * Multiple Users - Somewhat done
+ * Multiple Tasks 
 */
 
 namespace ToDoList_Console
@@ -18,6 +20,7 @@ namespace ToDoList_Console
     {
         String Title;
         String Description;
+        Dictionary<string, string> allTasks = new Dictionary<string, string>();
 
         public ToDoList()
         {
@@ -32,12 +35,29 @@ namespace ToDoList_Console
             Console.WriteLine("Enter Task Description: ");
             Description = Console.ReadLine();
 
-            Console.WriteLine("Task Successfully Added!");
-            Console.WriteLine("----------------------------\n");
+            if (string.IsNullOrWhiteSpace(Title))
+            {
+                Console.WriteLine("Title cannot be empty.");
+                Console.WriteLine("----------------------------\n");
+                return;
+            }
+
+            if (!(allTasks.Keys.Any(key => key.ToLower() == Title.ToLower())))
+            {
+                allTasks.Add(Title, Description);
+                Console.WriteLine("Task Successfully Added!");
+                Console.WriteLine("----------------------------\n");
+            }
+            else
+            {
+                Console.WriteLine("Task with this title already exists. Please use a different title.");
+                Console.WriteLine("----------------------------\n");
+                return;
+            }  
         }
         public void ViewTask()
         {
-            if (Title == null)
+            if (allTasks.Count == 0)
             {
                 Console.WriteLine("No tasks available to view.");
                 Console.WriteLine("----------------------------\n");
@@ -45,14 +65,15 @@ namespace ToDoList_Console
 
             else
             {
-                Console.WriteLine($"Title: {Title}");
-                Console.WriteLine($"Description: {Description}");
-                Console.WriteLine("----------------------------\n");
+                foreach (var pair in allTasks)
+                {
+                    Console.WriteLine($"Title: {pair.Key}\nDescription: {pair.Value}\n");
+                }
             }
         }
         public void UpdateTask()
         {
-            if (Title == null)
+            if (allTasks.Count == 0)
             {
                 Console.WriteLine("No tasks available to update.");
                 Console.WriteLine("----------------------------\n");
@@ -60,15 +81,44 @@ namespace ToDoList_Console
             }
 
             Console.WriteLine("Do you want to update Title (Yes or No): ");
-            string newTitle = Console.ReadLine();
+            string op = Console.ReadLine();
+            string newTitle = null;
 
-            if (newTitle.ToLower() == "yes")
+            if (op.ToLower() == "yes")
             {
-                Console.WriteLine("Enter New Title: ");
-                Title = Console.ReadLine();
+                do
+                {
+                    Console.WriteLine("Which Title would you like to update?\nTitles:" + string.Join(", ", allTasks.Keys));
+                    string choice = Console.ReadLine();
+
+
+                    if (!(allTasks.Keys.Any(key => key.ToLower() == choice.ToLower())))
+                    {
+                        Console.WriteLine("Title Does not Exist. Please try again.");
+                        continue;
+                    }
+
+                    else
+                    {
+                        Console.WriteLine("Enter New Title: ");
+                        newTitle = Console.ReadLine();
+
+                        if (string.IsNullOrWhiteSpace(newTitle))
+                        {
+                            Console.WriteLine("Title cannot be empty.\nTitle not updated\n");
+                            break;
+                        }
+
+                        allTasks[choice] = newTitle;
+
+                        Console.WriteLine("Task Successfully Updated!");
+                        Console.WriteLine("----------------------------\n");
+                        break;
+                    }
+                } while (true);            
             }
 
-            else if (newTitle.ToLower() == "no")
+            else if (op.ToLower() == "no")
             {
                 Console.WriteLine("Title remains unchanged.");
                 Console.WriteLine("----------------------------\n");
@@ -86,7 +136,7 @@ namespace ToDoList_Console
             if (newDesc.ToLower() == "yes")
             {
                 Console.WriteLine("Enter New Description: ");
-                Description = Console.ReadLine();
+                allTasks[newTitle] = Console.ReadLine();
 
                 Console.WriteLine("Description Successfully Updated!");
                 Console.WriteLine("----------------------------\n");
@@ -106,7 +156,7 @@ namespace ToDoList_Console
         }
         public void RemoveTask()
         {
-            if (Title == null)
+            if (allTasks.Count == 0)
             {
                 Console.WriteLine("List is already empty.");
                 Console.WriteLine("----------------------------\n");
@@ -121,7 +171,7 @@ namespace ToDoList_Console
         }
         public void SearchTask()
         {
-            if (Title == null)
+            if (allTasks.Count == 0)
             {
                 Console.WriteLine("No Tasks Available to Search");
                 Console.WriteLine("----------------------------\n");
@@ -174,66 +224,42 @@ namespace ToDoList_Console
                 Console.WriteLine("5. Search Task");
                 Console.WriteLine("6. Change Users");
                 Console.WriteLine("7. Exit\n");
-                Console.Write("Please select an option (1-6): ");
+                Console.Write("Please select an option (1-7): ");
+
                 option = Console.ReadLine();
 
-                if (option == "1")
+                switch (option)
                 {
-                    userTasks[username].AddTask();
-                }
+                    case "1": userTasks[username].AddTask(); break;
+                    case "2": userTasks[username].ViewTask(); break;
+                    case "3": userTasks[username].UpdateTask(); break;
+                    case "4": userTasks[username].RemoveTask(); break;
+                    case "5": userTasks[username].SearchTask(); break;
+                    case "6":
+                        Console.Write("Enter your username: ");
+                        username = Console.ReadLine();
 
-                else if (option == "2")
-                {
-                    userTasks[username].ViewTask();
-                }
+                        if (!userTasks.ContainsKey(username))
+                        {
+                            userTasks.Add(username, new ToDoList());
+                            Console.WriteLine($"Welcome {username}!");
+                            Console.WriteLine("----------------------------\n");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Welcome back {username}!");
+                            Console.WriteLine("----------------------------\n");
+                        }
+                        break;
 
-                else if (option == "3")
-                {
-                    userTasks[username].UpdateTask();
-                }
+                    case "7": option = "7"; break;
 
-                else if (option == "4")
-                {
-                    userTasks[username].RemoveTask();
-                }
-
-                else if (option == "5")
-                {
-                    userTasks[username].SearchTask();
-                }
-
-                else if (option == "6")
-                {
-                    Console.Write("Enter your username: ");
-                    username = Console.ReadLine();
-
-                    if (!userTasks.ContainsKey(username))
-                    {
-                        userTasks.Add(username, new ToDoList());
-                        Console.WriteLine($"Welcome {username}!");
+                    default:
+                        Console.WriteLine("Invalid option. Please try again.");
                         Console.WriteLine("----------------------------\n");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Welcome back {username}!");
-                        Console.WriteLine("----------------------------\n");
-                    }
-                    //Console.WriteLine("User Successfully Changed!");
+                        break;
                 }
-
-                else if (option == "7")
-                {
-                    break;
-                }
-
-                else
-                {
-                    Console.WriteLine("Invalid option. Please try again.");
-                    Console.WriteLine("----------------------------\n");
-                    continue;
-                }
-            } while (true);
+            } while (option != "7");
         }
     }
 }
-
